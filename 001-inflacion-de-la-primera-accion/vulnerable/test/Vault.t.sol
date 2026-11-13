@@ -62,7 +62,7 @@ contract PruebaAtaque {
 
         // INVARIANTE: un deposito de al menos 1 wei emite al menos 1 accion.
         // En el contrato vulnerable esta linea revierte: la victima pago y no
-        // recibio nada.
-        assert(vault.shares(address(victima)) > 0);
+        // recibio nada. El motivo lleva el id del registro: el rojo se identifica solo.
+        require(vault.shares(address(victima)) > 0, "acciones-positivas-por-deposito");
     }
 }
