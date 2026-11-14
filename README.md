@@ -46,6 +46,7 @@ se borra al salir: una corrida no debe dejar el árbol sucio.
 |---|------|-----------|--------------|
 | 001 | inflacion-de-la-primera-accion | `acciones_emitidas > 0` para todo depósito ≥ 1 wei | una donación directa al Vault infla el precio por acción y el depósito siguiente se redondea a cero |
 | 002 | manipulacion-oraculo-spot-amm | `deuda ≤ colateral × precio_previo` | el precio spot de un pool se mueve y el mercado lo lee en el mismo bloque |
+| 003 | contabilidad-interna-desincronizada | `saldos_contables ≤ custodia_real` | el libro anota el monto pedido y el token entrega menos: la comisión cae entera sobre el último que sale |
 
 ## 001 · Inflación de la primera acción
 
@@ -95,6 +96,56 @@ la evidencia; el `require` del invariante es sólo su consecuencia.
 el ancla por bloque, no impide un precio sostenido. Quien mantenga la reserva
 manipulada durante ~200 bloques acaba moviendo el ancla hasta el precio manipulado.
 El test `test_laCotaLimitaElBloquePeroNoElPrecioSostenido` lo publica.
+
+## 003 · Contabilidad interna desincronizada
+
+El fallo no está en el redondeo ni en el precio, sino en **qué se anota**. Una bóveda
+acredita al depositante el monto que *pidió*, mientras el token entrega *menos*: la
+comisión de transferencia se va por el camino sin que el libro interno se entere.
+
+```solidity
+saldos[msg.sender] += cuanto;   // lo pedido
+// custodia real = token.balanceOf(address(this))  → lo que de verdad llegó
+```
+
+Diez depósitos de `100e18` sobre un token que quema un 1 % al moverse:
+
+| | vulnerable | remediado |
+|---|---|---|
+| `totalContable` | 1000e18 | 990e18 |
+| `custodia` | 990e18 | 990e18 |
+| retiran completo | 9 de 10 | 10 de 10 |
+| el décimo encuentra | 90e18 con saldo 100e18 | 0 |
+
+El invariante que se rompe es de conservación, no de autorización:
+
+```
+suma_saldos_contables <= custodia_real
+```
+
+**El detalle que importa:** la comisión no es el fallo — es su **distribución**. Ese
+1 % se acumula sobre quien quede último en salir, que descubre que su saldo dice 100
+mientras la bóveda tiene 90. Los nueve primeros cobran completos; el que llega tarde
+paga la fiesta.
+
+**El parche** no es otro `require`. Acredita el delta medido:
+
+```solidity
+uint256 previo   = token.balanceOf(address(this));
+token.transferirDe(msg.sender, address(this), cuanto);
+uint256 recibido = token.balanceOf(address(this)) - previo;
+saldos[msg.sender] += recibido;
+```
+
+Cero guardas nuevas: la corrección es aritmética. El atajo perezoso
+—`require(recibido == cuanto)`— habría rechazado el token entero, es decir habría
+vendido exclusión de tokens como si fuera contabilidad. El test
+`test_elParcheNoRechazaElTokenConComision` lo falsa: el mismo token con comisión se
+deposita y se retira completo bajo el parche.
+
+**Límite declarado:** medir el delta asume que el token no mueve su propio
+`balanceOf` a mitad de llamada. Un token con gancho de reentrada podría inflar el
+saldo observado y volver a separar contabilidad de custodia.
 
 ## Qué es y qué no es
 
