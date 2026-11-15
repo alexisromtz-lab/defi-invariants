@@ -1,0 +1,28 @@
+name: capsulas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capsulas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Misma version que se uso para escribir las capsulas (forge 1.9.0, 6056c584).
+      # El solc no se fija a proposito: asi el CI mide lo que mide un clon cualquiera.
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.9.0
+
+      - name: ejecutor
+        run: forge --version
+
+      - name: cada capsula roja en el ataque y verde en el parche
+        run: ./verificar-capsulas.sh

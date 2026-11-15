@@ -1,5 +1,7 @@
 # defi-invariants
 
+[![capsulas](https://github.com/alexisromtz-lab/defi-invariants/actions/workflows/capsulas.yml/badge.svg)](https://github.com/alexisromtz-lab/defi-invariants/actions/workflows/capsulas.yml)
+
 Reproducciones mínimas de fallos matemáticos en protocolos DeFi. Cada caso trae
 el contrato **vulnerable**, el **parche**, y una prueba que rompe el invariante en
 uno y lo sostiene en el otro. Nada de reportes en prosa: el fallo se demuestra
@@ -39,6 +41,44 @@ invariante que el ataque rompe, y no de que la prueba estaba mal escrita.
 
 `correr.sh` redirige los artefactos de `forge` (`out/`, `cache/`) a un temporal que
 se borra al salir: una corrida no debe dejar el árbol sucio.
+
+## Verificación
+
+El repositorio se verifica a sí mismo. Un solo comando comprueba la promesa de
+arriba en todas las cápsulas:
+
+```sh
+./verificar-capsulas.sh
+```
+
+```
+CAPSULA                                       ATAQUE  REMEDIO  VEREDICTO
+001-inflacion-de-la-primera-accion            1       0        OK: [FAIL: acciones-positivas-por-deposito]
+002-manipulacion-oraculo-spot-amm             1       0        OK: [FAIL: colateral-cubre-la-deuda]
+003-contabilidad-interna-desincronizada       1       0        OK: [FAIL: contabilidad-cubierta-por-custodia]
+ARBOL LIMPIO: ninguna corrida dejo out/, cache/ ni broadcast/
+CAPSULAS: 0 fallo(s)
+```
+
+Corre en cada push (`.github/workflows/capsulas.yml`, `forge 1.9.0`), así que el
+badge no es decoración: si una cápsula deja de romperse o deja de arreglarse, se
+pone rojo.
+
+**Qué exige, exactamente** — tres condiciones, no una:
+
+1. el ataque sale **distinto de cero**;
+2. y el `[FAIL: …]` que imprime **nombra el invariante**, comprobando que ese texto
+   aparece literalmente en el archivo de ataque publicado. Un `assert(false)`
+   imprime `panic: assertion failed` y **se rechaza**: un rojo anónimo puede ser una
+   compilación rota disfrazada de invariante roto;
+3. el parche sale **cero**.
+
+Y una cuarta, sobre el árbol: la corrida no puede dejar `out/`, `cache/` ni
+`broadcast/` dentro del repositorio.
+
+El verificador **no duplica la lista de invariantes**: los lee de los propios
+archivos publicados, así que no hay una segunda fuente de verdad que pueda
+desincronizarse.
 
 ## Casos
 
