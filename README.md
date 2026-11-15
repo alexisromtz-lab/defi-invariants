@@ -9,6 +9,8 @@ ejecutando.
 
 Estas cápsulas son material de estudio. Si te sirven para lo mismo, bienvenido.
 
+> **¿Tienes un contrato en Solidity?** → [Trabajo sobre tu contrato](#trabajo-sobre-tu-contrato)
+
 ## Requisito: Foundry
 
 Necesitas `forge`. La primera corrida descarga el compilador de Solidity (`solc`),
@@ -192,6 +194,23 @@ deposita y se retira completo bajo el parche.
 `balanceOf` a mitad de llamada. Un token con gancho de reentrada podría inflar el
 saldo observado y volver a separar contabilidad de custodia.
 
+## Qué demuestra este repositorio
+
+No demuestra que sepa auditar un protocolo entero. Demuestra algo más estrecho y
+comprobable: **dado un fallo de conservación, sé reducirlo a la ecuación que lo
+produce, escribir la prueba que lo rompe, y repararlo sin poner un candado encima.**
+
+Las tres reparaciones son de diseño, y ninguna añade un `require`:
+
+| # | La ecuación que se rompe | La reparación |
+|---|---|---|
+| 001 | `emitidas = (msg.value × totalShares) / activosPrevios` | acciones y activos **virtuales**: el denominador no puede ser pequeño nunca |
+| 002 | `deuda ≤ colateral × precio_spot` | el precio deja de ser spot: **ancla** que se mueve como mucho 1 % por bloque |
+| 003 | `saldos_contables ≤ custodia_real` | se acredita el **delta medido**, no el monto pedido |
+
+Un `require` habría tapado el síntoma en las tres. Ese es el punto: un parche que
+rechaza la operación legítima no conserva el invariante, lo esquiva.
+
 ## Qué es y qué no es
 
 - **Es** material de estudio: reproducciones mínimas escritas desde cero. No copia
@@ -199,6 +218,27 @@ saldo observado y volver a separar contabilidad de custodia.
 - **No es** un aviso de seguridad sobre ningún protocolo real, ni una herramienta de
   auditoría. Los contratos son deliberadamente pequeños para que el fallo quepa en
   una pantalla.
+
+## Trabajo sobre tu contrato
+
+Este repositorio es la **muestra de método**, no el resultado. El resultado es la
+revisión de tu código, y se hace así:
+
+1. **Se formulan las leyes** que tu protocolo promete: que las sumas cuadren, que
+   nadie retire más de lo que entró, que el precio no se pueda mover dentro de un
+   bloque.
+2. **Se escriben las pruebas que las rompen**, en Foundry, contra tu contrato.
+3. **Se entrega, por cada hallazgo, el par rojo/verde**: el ataque que falla y el
+   parche que lo cierra. No una descripción del problema: la prueba ejecutable.
+
+**Lo que no es.** No es un sello de auditoría ni una garantía de cobertura total.
+Un informe que dice «no encontré nada relevante en este alcance» es un resultado
+posible, y se entrega con el mismo detalle que uno con hallazgos.
+
+**Contacto.** `alexis_romtz@hotmail.com` con el repositorio y el alcance que te
+interesa; el correo está también en [mi perfil](https://github.com/alexisromtz-lab).
+Se habla el alcance antes de que nadie pague nada. No pegues código de tu contrato
+en un issue público: un issue sirve para abrir la conversación, no para el análisis.
 
 ## Licencia
 
