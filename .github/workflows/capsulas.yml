@@ -11,9 +11,11 @@ permissions:
 
 jobs:
   capsulas:
-    runs-on: ubuntu-latest
+    # Anclado, no `ubuntu-latest`: la etiqueta migra a Ubuntu 26 y una compuerta no
+    # debe cambiar de suelo sin que alguien lo decida.
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # Misma version que se uso para escribir las capsulas (forge 1.9.0, 6056c584).
       # El solc no se fija a proposito: asi el CI mide lo que mide un clon cualquiera.

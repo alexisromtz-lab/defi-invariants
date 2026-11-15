@@ -52,10 +52,10 @@ arriba en todas las cápsulas:
 ```
 
 ```
-CAPSULA                                       ATAQUE  REMEDIO  VEREDICTO
-001-inflacion-de-la-primera-accion            1       0        OK: [FAIL: acciones-positivas-por-deposito]
-002-manipulacion-oraculo-spot-amm             1       0        OK: [FAIL: colateral-cubre-la-deuda]
-003-contabilidad-interna-desincronizada       1       0        OK: [FAIL: contabilidad-cubierta-por-custodia]
+CAPSULA                                       ATAQUE  REMEDIO  PRUEBAS      VEREDICTO
+001-inflacion-de-la-primera-accion            1       0        1roja/2verde OK: [FAIL: acciones-positivas-por-deposito]
+002-manipulacion-oraculo-spot-amm             1       0        1roja/2verde OK: [FAIL: colateral-cubre-la-deuda]
+003-contabilidad-interna-desincronizada       1       0        1roja/2verde OK: [FAIL: contabilidad-cubierta-por-custodia]
 ARBOL LIMPIO: ninguna corrida dejo out/, cache/ ni broadcast/
 CAPSULAS: 0 fallo(s)
 ```
@@ -71,9 +71,14 @@ pone rojo.
    aparece literalmente en el archivo de ataque publicado. Un `assert(false)`
    imprime `panic: assertion failed` y **se rechaza**: un rojo anónimo puede ser una
    compilación rota disfrazada de invariante roto;
-3. el parche sale **cero**.
+3. el parche sale **cero**;
+4. y ambas corridas **ejecutaron pruebas** — la columna `PRUEBAS` lo publica.
 
-Y una cuarta, sobre el árbol: la corrida no puede dejar `out/`, `cache/` ni
+Esa cuarta condición no es celo: cero pruebas también sale cero, y leerlo como
+verde sería medir la *ausencia* de la prueba en vez de su resultado. Un error de
+compilación da `rc=1` sin ninguna prueba roja, y por eso también se rechaza.
+
+Y una quinta, sobre el árbol: la corrida no puede dejar `out/`, `cache/` ni
 `broadcast/` dentro del repositorio.
 
 El verificador **no duplica la lista de invariantes**: los lee de los propios
